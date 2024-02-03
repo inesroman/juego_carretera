@@ -1,0 +1,2642 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; ------------------------------------------------
+    2 00000000         ; |              |
+    3 00000000         ; |   Práctica 5 - AOC 1       |
+    4 00000000         ; |   Nerea Salamero Labara      |
+    5 00000000         ; |   Inés Román Gracia       |
+    6 00000000         ; |            05/2022 |
+    7 00000000         ; ------------------------------------------------
+    8 00000000                 AREA             datos,DATA
+    9 00000000         
+   10 00000000 FFFFF010 
+                       VICIntEnable
+                               EQU              0xFFFFF010  ;activar IRQs (solo
+                                                             bits 1) 
+   11 00000000 FFFFF014 
+                       VICIntEnClr
+                               EQU              0xFFFFF014  ;desactivar IRQs (s
+                                                            olo bits 1) 
+   12 00000000 FFFFF100 
+                       VICVectAddr0
+                               EQU              0xFFFFF100  ;vector interrupcio
+                                                            nes (VI) 
+   13 00000000 FFFFF030 
+                       VICVectAddr
+                               EQU              0xFFFFF030  ;registro para EOI 
+                                                            
+   14 00000000         
+   15 00000000 E0004000 
+                       T0_IR   EQU              0xE0004000  ;reg. para bajar pe
+                                                            ticiones IRQ4 
+   16 00000000 0000000A 
+                       MAX_TICS
+                               EQU              10          ;cent. seg. para de
+                                                            cr. contador 
+   17 00000000 00000000 
+                       timer_so
+                               DCD              0           ;var. para @RSI_tim
+                                                            er_SO 
+   18 00000004 00000064 
+                       contador
+                               DCD              100         ;decimas de seg. qu
+                                                            e faltan 
+   19 00000008         
+   20 00000008 E0010000 
+                       RDAT    EQU              0xE0010000  ;reg. datos teclado
+                                                             UART1
+   21 00000008 E0028004 
+                       IOSET   EQU              0xE0028004  ;reg. datos GPIO (a
+                                                            ctivar bits)
+   22 00000008 E002800C 
+                       IOCLR   EQU              0xE002800C  ;reg. datos GPIO (d
+                                                            esactivar bits)
+   23 00000008 00000000 
+                       tecl_so DCD              0
+   24 0000000C         
+   25 0000000C 40007E20 
+                       dirInicio
+                               EQU              0x40007E20
+   26 0000000C 40007FFF 
+                       dirFin  EQU              0x40007FFF
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   27 0000000C 40007EE3 
+                       dirRotulo
+                               EQU              0x40007EE3  ;dir. rótulo ganar 
+                                                            || dir. rótulo game
+                                                            over
+   28 0000000C 40007E08 
+                       dirVidas
+                               DCD              0x40007E08
+   29 00000010 40007E1C 
+                       dirPuntos
+                               DCD              0x40007E1C
+   30 00000014         
+   31 00000014 40007FEC 
+                       dir_coche
+                               DCD              0x40007FEC  ;dirección de inici
+                                                            o del coche
+   32 00000018 00000008 
+                       velo    DCD              8           ;var. que controla 
+                                                            el movimiento del c
+                                                            oche, un movimiento
+                                                             cada 0.08 segundos
+                                                            
+   33 0000001C 00000003 
+                       vidas   DCD              3           ;var. que cuenta la
+                                                            s vidas que le qued
+                                                            an al coche
+   34 00000020 00000000 
+                       puntosDec
+                               DCD              0           ;var. que cuenta el
+                                                             numero de decenas 
+                                                            de monedas que ha c
+                                                            ogido el coche
+   35 00000024 00000000 
+                       puntosUni
+                               DCD              0           ;var. que cuenta el
+                                                             numero de unidades
+                                                             de monedas que ha 
+                                                            cogido el coche
+   36 00000028 00000000 
+                       tmoneda DCD              0           ;var. que indica el
+                                                             tiempo que tiene q
+                                                            ue pasar hasta crea
+                                                            r la proxima moneda
+                                                            
+   37 0000002C 00000000 
+                       reloj   DCD              0           ;contador de centes
+                                                            imas de segundo 
+   38 00000030 00000008 
+                       max     DCD              8           ;velocidad de movim
+                                                            iento (en centesima
+                                                            s s.) 
+   39 00000034 00000000 
+                       cont    DCD              0           ;instante siguiente
+                                                             movimiento 
+   40 00000038 00000000 
+                       dirx    DCD              0           ;direccion mov. car
+                                                            acter ‘H’ (-1 izda.
+                                                            ,0 stop,1 der.) 
+   41 0000003C 00000000 
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+                       diry    DCD              0           ;direccion mov. car
+                                                            acter ‘H’ (-1 arrib
+                                                            a,0 stop,1 abajo) 
+   42 00000040 00      fin     DCB              0           ;indicador fin de p
+                                                            rograma (si vale 1)
+                                                             
+   43 00000041 00      pulsado DCB              0           ;indicador si se ha
+                                                             pulsado la tecla d
+                                                            e inicio
+   44 00000042         
+   45 00000042 00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 vecRoad SPACE            15          ;reservo espacio pa
+                                                            ra colocar las posi
+                                                            ciones de los # de 
+                                                            la carretera
+   46 00000051 00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 
+              00 00 00 vecCoin SPACE            15          ;reservo espacio pa
+                                                            ra colocar las posi
+                                                            ciones de las moned
+                                                            as
+   47 00000060         
+   48 00000060 00      finGanar
+                               DCB              0           ;indicador fin por 
+                                                            ganar (si vale 1)
+   49 00000061 20 56 69 
+              64 61 73 
+              3A 20 20 
+              20 20 20 
+              20 20 20 
+              20 20 20 
+              20 20 50 
+              75 6E 74 
+              6F 73 3A marcador
+                               DCB              " Vidas:             Puntos:"
+   50 0000007C 50 72 65 
+              73 73 20 
+              28 53 29 
+              20 74 6F 
+              20 73 74 
+              61 72 74 
+              20 74 68 
+              65 20 67 
+              61 6D 65 
+              2E       fraseini
+                               DCB              "Press (S) to start the game."
+   51 00000098 20 20 20 
+              20 20 20 
+              20 20 47 
+              41 4D 45 
+              20 4F 56 
+              45 52 20 
+              20 20 20 
+              20 20 20 
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+              20       frasefin
+                               DCB              "        GAME OVER        "
+   52 000000B1 A1 45 4E 
+              48 4F 52 
+              41 42 55 
+              45 4E 41 
+              21 20 48 
+              41 53 20 
+              47 41 4E 
+              41 44 4F 
+              20       fraseganar
+                               DCB              "¡ENHORABUENA! HAS GANADO "
+   53 000000CA         
+   54 000000CA         
+   55 000000CA                 AREA             codigo,CODE
+   56 00000000                 EXPORT           inicio      ; forma de enlazar 
+                                                            con el startup.s
+   57 00000000                 IMPORT           srand       ; para poder invoca
+                                                            r SBR srand
+   58 00000000                 IMPORT           rand        ; para poder invoca
+                                                            r SBR rand
+   59 00000000         inicio
+   60 00000000         ;programar RSI_IRQ4 -> RSI_reloj 
+   61 00000000 E59F087C        LDR              r0,=VICVectAddr0 ;r0=@VI
+   62 00000004 E59F187C        LDR              r1,=timer_so ;r1=timer_so
+   63 00000008 E3A02004        mov              r2,#4       ;r2=4
+   64 0000000C E7903102        ldr              r3,[r0,r2,LSL #2] ;r3=VI[r2]=@R
+                                                            SI_timer_SO
+   65 00000010 E5813000        str              r3,[r1]     ;reloj_so=@RSI_time
+                                                            r_SO
+   66 00000014         
+   67 00000014 E59F1870        LDR              r1,=RSI_reloj ;r1=@RSI_reloj (l
+                                                            a RSI)
+   68 00000018 E7801102        str              r1,[r0,r2,LSL #2] ;VI[r2]=@RSI_
+                                                            reloj (la RSI)
+   69 0000001C         
+   70 0000001C         ;programar RSI_IRQ7 -> RSI_teclado 
+   71 0000001C E59F0860        LDR              r0,=VICVectAddr0 ;r0=@VI
+   72 00000020 E59F1868        LDR              r1,=tecl_so ;r1=@tecl_so
+   73 00000024 E3A02007        mov              r2,#7       ;r2=7
+   74 00000028 E7903102        ldr              r3,[r0,r2,LSL #2] ;r3=VI[7]=@RS
+                                                            I_tecl_SO
+   75 0000002C E5813000        str              r3,[r1]     ;tecl_so=@RSI_tecl_
+                                                            SO
+   76 00000030         
+   77 00000030 E59F185C        LDR              r1,=RSI_teclado ;r1=@RSI_teclad
+                                                            o mia
+   78 00000034 E7801102        str              r1,[r0,r2,LSL #2] ;VI[7]=@RSI_t
+                                                            eclado mia
+   79 00000038         
+   80 00000038         ;activar IRQ4,IRQ7 
+   81 00000038 E59F0858        LDR              r0,=VICIntEnable 
+                                                            ;r0=@VICIntEnable
+   82 0000003C E3A01090        mov              r1,#2_10010000 ;r1=#2_10010000
+   83 00000040 E5801000        str              r1,[r0]     ;VICIntEnable[4,7]=
+                                                            1 (habilit. IRQ4 e 
+                                                            IRQ7)
+   84 00000044         
+   85 00000044         ;-------------------------------------------------------
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+                       ----------------------------------------------------
+   86 00000044         ;     PANTALLA CON RÓTULO INICIAL
+   87 00000044         ;-------------------------------------------------------
+                       ----------------------------------------------------
+   88 00000044 E59F0850        LDR              r0,=0x40007E00 ;guardo en r0 @p
+                                                            rimer elemento
+   89 00000048 E59F1850        LDR              r1,=0x40007FFF ;guardo en r1 @ú
+                                                            ltimo elemento
+   90 0000004C E59F2850        LDR              r2,=0x40007EE1 ;guardo en r0 @f
+                                                            rase de la pantalla
+                                                             inicial
+   91 00000050 E59F3850        LDR              r3,=fraseini ;r1=@fraseinicial
+   92 00000054 E0255005        eor              r5,r5,r5    ;limpiamos registro
+                                                             r5 (contador)
+   93 00000058         
+   94 00000058 E1500002 
+                       compruebo
+                               cmp              r0,r2       ;comparo r0 con r3
+   95 0000005C 1A000007        bne              blanquito
+   96 00000060         
+   97 00000060 E5D34000 
+                       cartelito
+                               ldrb             r4,[r3]     ;r4=dato de @frasei
+                                                            nicial
+   98 00000064 E5C04000        strb             r4,[r0]     ;cargamos r2 en r0 
+                                                            (mostramos por pant
+                                                            alla las letras)
+   99 00000068 E2800001        add              r0,r0,#1    ;r0=r0+1 -> muevo u
+                                                            na posición
+  100 0000006C E355001B        cmp              r5,#27      ;comparo r6 (contad
+                                                            or) con 27    
+  101 00000070 0A000002        beq              blanquito   ;si son iguales sal
+                                                            to a blanquito
+  102 00000074 E2833001        add              r3,r3,#1    ;si no r3=r3+1
+  103 00000078 E2855001        add              r5,r5,#1    ;r5=r5+1
+  104 0000007C EAFFFFF7        b                cartelito   ;salto incondiciona
+                                                            l a cartelito para 
+                                                            imprimir el resto d
+                                                            el msj
+  105 00000080         
+  106 00000080 E3A04020 
+                       blanquito
+                               mov              r4,#' '     ;r2=' ' (espacio)
+  107 00000084 E5C04000        strb             r4,[r0]     ;imprimo el espacio
+                                                             en la pantalla
+  108 00000088 E2800001        add              r0,r0,#1    ;r0=r0+1
+  109 0000008C         
+  110 0000008C E1500001 
+                       fin_pantinicio
+                               cmp              r0,r1
+  111 00000090 9AFFFFF0        bls              compruebo
+  112 00000094         
+  113 00000094         ;Comprobar si se ha pulsado la tecla para iniciar el jue
+                       go.
+  114 00000094 E59F2810 
+                       tecla   LDR              r2,=pulsado ;r2=@pulsado
+  115 00000098 E5D22000        ldrb             r2,[r2]     ;r2=dato de @pulsad
+                                                            o
+  116 0000009C E3520000        cmp              r2,#0       ;comparo r2 con 0
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  117 000000A0 0AFFFFFB        beq              tecla       ;si son iguales sig
+                                                            ue comprobando si h
+                                                            emos pulsado 
+  118 000000A4         ;la tecla necesaria para iniciar el juego.
+  119 000000A4         
+  120 000000A4         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  121 000000A4         ;     CABECERA Y PANTALLA INICIAL DEL PROGRAMA
+  122 000000A4         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  123 000000A4 E59F07F0 
+                       pantallainicial
+                               LDR              r0,=0x40007E00 ;guardo en r0 @p
+                                                            rimerelemento
+  124 000000A8 E59F1800        LDR              r1,=marcador ;r1=@marcador
+  125 000000AC E5D12000        ldrb             r2,[r1]     ;r2=dato de @marcad
+                                                            or
+  126 000000B0 E0233003        eor              r3,r3,r3    ;limpio registro r3
+                                                             (contador)
+  127 000000B4         
+  128 000000B4         ;Mostrar cabecera 'Vidas:       Puntos:'
+  129 000000B4 E4D12001 
+                       bucMarcador
+                               ldrb             r2,[r1],#1  ;r2=dato de @marcad
+                                                            or
+  130 000000B8 E4C02001        strb             r2,[r0],#1  ;mostro el vector m
+                                                            arcador desde la @ 
+                                                            inicial de la panta
+                                                            lla
+  131 000000BC E2833001        add              r3,r3,#1    ;r3=r3+1 (contador+
+                                                            +)
+  132 000000C0 E353001B        cmp              r3,#27      ;comparo r3 (cont) 
+                                                            con 27
+  133 000000C4 1AFFFFFA        bne              bucMarcador ;si r3!=27, salto a
+                                                             bucMarcador
+  134 000000C8         
+  135 000000C8         ;Mostrar número de vidas restantes.
+  136 000000C8 E59F37E4 
+                       nVidas  LDR              r3,=dirVidas ;r3=@dirVidas
+  137 000000CC E5933000        ldr              r3,[r3]     ;r3=dato de @dirVid
+                                                            as
+  138 000000D0 E59F27E0        LDR              r2,=vidas   ;r2=@vidas
+  139 000000D4 E5922000        ldr              r2,[r2]     ;r2=dato de @vidas
+  140 000000D8 E2822030        add              r2,r2,#48   ;paso las vidas a a
+                                                            scii
+  141 000000DC E5C32000        strb             r2,[r3]     ;escribo en dirVida
+                                                            s las vidas que le 
+                                                            quedan al jugador
+  142 000000E0         
+  143 000000E0         ;Pongo la pantalla en blanco.
+  144 000000E0 E59F07D4        LDR              r0,=dirInicio ;guardo en r0 @pr
+                                                            imer elemento
+  145 000000E4 E59F17B4        LDR              r1,=dirFin  ;guardo en r1 @últi
+                                                            mo elemento
+  146 000000E8 E3A02020        mov              r2,#' '     ;r2=' ' (espacio)
+  147 000000EC E1500001 
+                       blanco  cmp              r0,r1       ;comparo r0 con r1
+  148 000000F0 8A000002        bhi              carretera   ;si r0=r1 (@actual=
+                                                            @final), salto a ca
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+                                                            rretera
+  149 000000F4 E5C02000        strb             r2,[r0]     ;imprimo el espacio
+                                                             en la pantalla
+  150 000000F8 E2800001        add              r0,r0,#1    ;r0=r0+1
+  151 000000FC EAFFFFFA        b                blanco      ;salto incondiciona
+                                                            l a blanco
+  152 00000100         
+  153 00000100         ;Dibujo la carretera en la pantalla.
+  154 00000100 E59F07B4 
+                       carretera
+                               LDR              r0,=dirInicio ;r0=@dirInicio
+  155 00000104 E3A02023        mov              r2,#'#'     ;r2=#
+  156 00000108 E5C02008 
+                       bucRoad strb             r2,[r0,#8]  ;muestro en @dirIni
+                                                            cio+8 '#'
+  157 0000010C E5C02010        strb             r2,[r0,#16] ;muestro en @dirIni
+                                                            cio+16 '#'
+  158 00000110 E2800020        add              r0,r0,#32   ;avanzo una fila
+  159 00000114 E1500001        cmp              r0,r1       ;comparo r2(@dirIni
+                                                            cio) y r3(@dirFin)
+  160 00000118 BAFFFFFA        blt              bucRoad     ;si r2<r3, salto a 
+                                                            bucRoad
+  161 0000011C         
+  162 0000011C         ;Inicio vector de la carretera.
+  163 0000011C E59F079C        LDR              r0,=vecRoad ;r0=@vecRoad
+  164 00000120 E3A01000        mov              r1,#0       ;r1=0
+  165 00000124 E3A02008        mov              r2,#8       ;r2=8
+  166 00000128 E7C02001 
+                       bucVec  strb             r2,[r0,r1]  ;guardo en @vecRoad
+                                                            +r1 el valor de r2
+  167 0000012C E2811001        add              r1,r1,#1    ;r1=r1+1
+  168 00000130 E351000F        cmp              r1,#15      ;comparo r1 con 15
+  169 00000134 1AFFFFFB        bne              bucVec      ;si no son iguales,
+                                                             salto a bucVec
+  170 00000138         
+  171 00000138         ;Escribir el coche en su posición inicial.
+  172 00000138 E3A01048 
+                       coche   mov              r1,#'H'     ;r1=H
+  173 0000013C E59F2780        LDR              r2,=dir_coche ;r2=@dir_coche
+  174 00000140 E5922000        ldr              r2,[r2]     ;r2=dato de @dir_co
+                                                            che
+  175 00000144 E59F0770        LDR              r0,=dirInicio ;guardo en r0 @pr
+                                                            imer elemento
+  176 00000148 E59F3750        LDR              r3,=dirFin  ;guardo en r3 @últi
+                                                            mo elemento
+  177 0000014C         
+  178 0000014C E1500002 
+                       bucCoche
+                               cmp              r0,r2       ;comparo r0(@elemen
+                                                            toactual) con r2(di
+                                                            r_coche)
+  179 00000150 1A000000        bne              seguimos    ;si r0!=r2, salto a
+                                                             seguimos
+  180 00000154 E5C01000        strb             r1,[r0]     ;muestro el coche p
+                                                            or pantalla
+  181 00000158         
+  182 00000158 E2800001 
+                       seguimos
+                               add              r0,r0,#1    ;r0=r0+1
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+  183 0000015C E1500003        cmp              r0,r3       ;comparo la direcci
+                                                            ón actual con la fi
+                                                            nal
+  184 00000160 BAFFFFF9        blt              bucCoche    ;si r0<=r3, salto a
+                                                             pantallainicial
+  185 00000164         
+  186 00000164         
+  187 00000164         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  188 00000164         ;     INICIALIZAR NÚMEROS ALEATORIOS
+  189 00000164         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  190 00000164         ;Inicializar semilla srand
+  191 00000164 E59F075C        LDR              r0,=velo    ;r0=@velo
+  192 00000168 E5900000        ldr              r0,[r0]     ;r0=dato de @velo
+  193 0000016C E52D0004        PUSH             {r0}        ;apilar parámetro
+  194 00000170 EBFFFFFE        bl               srand
+  195 00000174 E28DD004        add              sp,sp,#4    ;quitar parámetro
+  196 00000178         
+  197 00000178         ;Número aleatorio entre 1 y 16 filas para crear primera 
+                       moneda
+  198 00000178 E24DD004        sub              sp,sp,#4    ;espacio para el re
+                                                            sultado
+  199 0000017C EBFFFFFE        bl               rand
+  200 00000180 E49D0004        POP              {r0}        ;r0 = numRand1
+  201 00000184 E3A0100F        mov              r1,#15      ;r1=15
+  202 00000188 E0000001        and              r0,r0,r1    ;r0=0..15
+  203 0000018C E2800001        add              r0,r0,#1    ;r0=1..16
+  204 00000190 E59F1734        LDR              r1,=tmoneda ;r1=@tmoneda
+  205 00000194 E5810000        str              r0,[r1]     ;guardo en r1 lo qu
+                                                            e hay en r0
+  206 00000198         
+  207 00000198         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  208 00000198         ;      EMPIEZA EL BUCLE
+  209 00000198         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  210 00000198         bucle                                ;Comprobar fin
+  211 00000198 E59F0730        LDR              r0,=fin     ;r0=@fin
+  212 0000019C E5D01000        ldrb             r1,[r0]     ;r1=dato de @fin
+  213 000001A0 E3510001        cmp              r1,#1       ;comparo r1 con 1
+  214 000001A4 0A00001D        beq              rotuloFin   ;si fin=1, salto a 
+                                                            pant_final
+  215 000001A8         
+  216 000001A8         ;Comprobar ganar
+  217 000001A8 E59F0724        LDR              r0,=finGanar ;r0=@finGanar
+  218 000001AC E5D01000        ldrb             r1,[r0]     ;r1=dato de @finGan
+                                                            ar
+  219 000001B0 E3510001        cmp              r1,#1       ;comparo r1 con 1
+  220 000001B4 0A00001B        beq              rotuloGanar ;si fin=1, salto a 
+                                                            rotuloGanar
+  221 000001B8         
+  222 000001B8         ;Actualizar posición coche
+  223 000001B8         ;¿Es necesario mover el coche?
+  224 000001B8 E59F0708        LDR              r0,=velo    ;r0=@velo
+  225 000001BC E5901000        ldr              r1,[r0]     ;r1=dato de @velo
+  226 000001C0 E3510008        cmp              r1,#8       ;comparo r1 con 8
+  227 000001C4 3A00000B        blo              moveRoad    ;si r1<8, salto a m
+                                                            oveRoad
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+  228 000001C8 E3A01000        mov              r1,#0       ;r1=0
+  229 000001CC E5801000        str              r1,[r0]     ;guardo en r0 el va
+                                                            lor de r1 (pongo @v
+                                                            elo a 0)
+  230 000001D0         
+  231 000001D0         ;Compruebo si tengo que mover en el eje X.
+  232 000001D0 E59F0700 
+                       comprDirX
+                               LDR              r0,=dirx    ;r0=@dirx
+  233 000001D4 E5900000        ldr              r0,[r0]     ;r0=dato de @dirx
+  234 000001D8 E3500000        cmp              r0,#0       ;comparo r0 con 0
+  235 000001DC 0A000000        beq              comprDirY   ;si son iguales, sa
+                                                            lto a comprDirY
+  236 000001E0 EB000051        bl               moveCar     ;llamo a SBR moveCa
+                                                            r
+  237 000001E4         
+  238 000001E4         ;Compruebo si tengo que mover en el eje Y.
+  239 000001E4 E59F06F0 
+                       comprDirY
+                               LDR              r0,=diry    ;r0=@diry
+  240 000001E8 E5900000        ldr              r0,[r0]     ;r0=dato de @diry
+  241 000001EC E3500000        cmp              r0,#0       ;comparo r0 con 0
+  242 000001F0 0A000000        beq              moveRoad    ;si son iguales, sa
+                                                            lto a moveRoad
+  243 000001F4 EB00004C        bl               moveCar     ;llamo a SBR moveCa
+                                                            r
+  244 000001F8         
+  245 000001F8         ;mover cada <max> tiempo la carretera.
+  246 000001F8 E59F06E0 
+                       moveRoad
+                               LDR              r0,=reloj   ;r0=@reloj
+  247 000001FC E5901000        ldr              r1,[r0]     ;r1=dato de @reloj
+  248 00000200 E59F26DC        LDR              r2,=max     ;r2=@max
+  249 00000204 E5922000        ldr              r2,[r2]     ;r2=dato de @max
+  250 00000208 E1510002        cmp              r1,r2       ;comparo reloj y ma
+                                                            x   
+  251 0000020C 3AFFFFE1        blo              bucle       ;salta si reloj!=ma
+                                                            x
+  252 00000210 E3A01000        mov              r1,#0       ;ponemos reloj a 0
+  253 00000214 E5801000        str              r1,[r0]     ;actualizo el valor
+                                                             de reloj
+  254 00000218 EB000095        bl               moverCarretera ;llamo a SBR mov
+                                                            erCarretera
+  255 0000021C EAFFFFDD        b                bucle       ;salto incondiciona
+                                                            l a bucle
+  256 00000220         
+  257 00000220         
+  258 00000220         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  259 00000220         ;     PANTALLA CON DIFERENTES RÓTULOS FINALES
+  260 00000220         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  261 00000220         ;Escribo la frase "GAME OVER"
+  262 00000220 E59F36C0 
+                       rotuloFin
+                               LDR              r3,=frasefin ;r3=@frasefin
+  263 00000224 EA000000        b                escribirFinal
+  264 00000228         
+  265 00000228         ;Escribo la frase "¡ENHORABUENA! HAS GANADO"
+
+
+
+ARM Macro Assembler    Page 10 
+
+
+  266 00000228 E59F36BC 
+                       rotuloGanar
+                               LDR              r3,=fraseganar ;r3=@fraseganar
+  267 0000022C         
+  268 0000022C         ;Escribir la frase correspondiente
+  269 0000022C E59F0668 
+                       escribirFinal
+                               LDR              r0,=0x40007E00 ;guardo en r0 @p
+                                                            rimer elemento
+  270 00000230 E59F1668        LDR              r1,=0x40007FFF ;guardo en r1 @ú
+                                                            ltimo elemento
+  271 00000234 E59F26B4        LDR              r2,=dirRotulo ;guardo en r2 @fr
+                                                            ase de la pantalla 
+                                                            final
+  272 00000238 E0255005        eor              r5,r5,r5    ;limpiamos registro
+                                                             r5 (contador)
+  273 0000023C         
+  274 0000023C E1500002 
+                       comprobarF
+                               cmp              r0,r2       ;comparo r0 con r2
+  275 00000240 1A000007        bne              blancoF     ;si r0!=r2,salto a 
+                                                            blancoF
+  276 00000244         
+  277 00000244 E5D34000 
+                       cartelfin
+                               ldrb             r4,[r3]     ;r4=dato de @frasef
+                                                            in
+  278 00000248 E5C04000        strb             r4,[r0]     ;cargamos r2 en r0 
+                                                            (mostramos por pant
+                                                            alla las letras)
+  279 0000024C E2800001        add              r0,r0,#1    ;r0=r0+1 -> muevo u
+                                                            na posición
+  280 00000250 E3550018        cmp              r5,#24      ;comparo r5(contado
+                                                            r) con 9    
+  281 00000254 0A000002        beq              blancoF     ;si son iguales sal
+                                                            to a blancoF
+  282 00000258 E2833001        add              r3,r3,#1    ;si no r3=r3+1
+  283 0000025C E2855001        add              r5,r5,#1    ;r5=r5+1
+  284 00000260 EAFFFFF7        b                cartelfin   ;salto incondiciona
+                                                            l a cartelfin para 
+                                                            imprimir el resto d
+                                                            el msj
+  285 00000264         
+  286 00000264 E3A04020 
+                       blancoF mov              r4,#' '     ;r2=' ' (espacio)
+  287 00000268 E5C04000        strb             r4,[r0]     ;imprimo el espacio
+                                                             en la pantalla
+  288 0000026C E2800001        add              r0,r0,#1    ;r0=r0+1
+  289 00000270         
+  290 00000270 E1500001 
+                       fin_pantfin
+                               cmp              r0,r1
+  291 00000274 9AFFFFF0        bls              comprobarF
+  292 00000278         
+  293 00000278         
+  294 00000278         ;=======================DESACTIVAMOS IRQ4, IRQ7, RSI_rel
+                       oj Y RSI_teclado====================================
+  295 00000278         finBucle                             ;desactivar IRQ4,IR
+                                                            Q7
+
+
+
+ARM Macro Assembler    Page 11 
+
+
+  296 00000278 E59F0674        LDR              r0,=VICIntEnClr 
+                                                            ;r0=@VICIntEnClr
+  297 0000027C E3A01090        mov              r1,#2_10010000 ;r1=#2_10010000
+  298 00000280 E5801000        str              r1,[r0]     ;VICIntEnClr[4,7]=1
+                                                             -> VICIntEnable[4]
+                                                            =0
+  299 00000284         
+  300 00000284         ;desactivar RSI_reloj
+  301 00000284 E59F05F8        LDR              r0,=VICVectAddr0 ;r0=@VI
+  302 00000288 E59F15F8        LDR              r1,=timer_so ;r1=@timer_so
+  303 0000028C E5911000        ldr              r1,[r1]     ;r1=timer_so=@RSI_t
+                                                            imer_SO
+  304 00000290 E3A02004        mov              r2,#4       ;r2=4
+  305 00000294 E7801102        str              r1,[r0,r2,LSL #2] ;VI[4]=@RSI_r
+                                                            eloj_SO
+  306 00000298         
+  307 00000298         ;desactivar RSI_teclado
+  308 00000298 E59F05E4        LDR              r0,=VICVectAddr0 ;r0=@VI
+  309 0000029C E59F15EC        LDR              r1,=tecl_so ;r1=tecl_so
+  310 000002A0 E5911000        ldr              r1,[r1]     ;r1=tec_so=@tecl_SO
+                                                            
+  311 000002A4 E3A02007        mov              r2,#7       ;r2=7
+  312 000002A8 E7801102        str              r1,[r0,r2,LSL #2] 
+                                                            ;VI[4]=@RSI_tecl_SO
+                                                            
+  313 000002AC         
+  314 000002AC EAFFFFFE 
+                       bfin    b                bfin
+  315 000002B0         
+  316 000002B0         
+  317 000002B0         
+  318 000002B0         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  319 000002B0         ;      SBR SUMAR MONEDAS.
+  320 000002B0         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  321 000002B0 E92D4800 
+                       sumaMoneda
+                               PUSH             {lr,r11}
+  322 000002B4 E1A0B00D        mov              fp,sp
+  323 000002B8 E92D001F        PUSH             {r0-r4}
+  324 000002BC         
+  325 000002BC E59F0634        LDR              r0,=dirPuntos ;r0=@dirPuntos
+  326 000002C0 E5900000        ldr              r0,[r0]     ;r0=direccion de lo
+                                                            s puntos en la pant
+                                                            alla
+  327 000002C4 E59F1630        LDR              r1,=puntosUni ;r1=@puntosUni
+  328 000002C8 E59F3630        LDR              r3,=puntosDec ;r3=@puntosDec
+  329 000002CC E5912000        ldr              r2,[r1]     ;r2=unidades de pun
+                                                            tos
+  330 000002D0 E5934000        ldr              r4,[r3]     ;r4=decenas de punt
+                                                            os
+  331 000002D4 E0844002        add              r4,r4,r2    ;r4=r4+r2
+  332 000002D8 E3540012        cmp              r4,#18      ;comparo r4 con 18
+  333 000002DC BA000003        blt              seguira     ;si no son iguales,
+                                                             significa que no h
+                                                            a llegado a 99
+  334 000002E0         
+  335 000002E0 E59F05EC        LDR              r0,=finGanar ;r0=@finGanar
+
+
+
+ARM Macro Assembler    Page 12 
+
+
+  336 000002E4 E3A01001        mov              r1,#1       ;r1=1
+  337 000002E8 E5C01000        strb             r1,[r0]     ;Guardo r1(1) en r0
+                                                            (@finGanar) [pongo 
+                                                            finGanar a 1]
+  338 000002EC EA00000D        b                finSuma
+  339 000002F0         
+  340 000002F0         ;Si no ha llegado a 99 puntos, sigo sumando unidades/dec
+                       enas.
+  341 000002F0 E3520009 
+                       seguira cmp              r2,#9       ;si ya hay 9 unidad
+                                                            es no podemos sumar
+                                                             mas
+  342 000002F4 03A02000        moveq            r2,#0       ;si r2=9 -> r2=0
+  343 000002F8 12822001        addne            r2,r2,#1    ;si r2!=9 -> r2=r2+
+                                                            1
+  344 000002FC E5812000        str              r2,[r1]     ;guardo las nuevas 
+                                                            unidades    
+  345 00000300 E2822030        add              r2,r2,#48   ;paso las unidades 
+                                                            a ascii
+  346 00000304 E5C02001        strb             r2,[r0,#1]
+  347 00000308 1A000006        bne              finSuma     ;si había menos de 
+                                                            9 unidades ya he ac
+                                                            abado
+  348 0000030C E5932000        ldr              r2,[r3]     ;r2=decenas de punt
+                                                            os
+  349 00000310 E3520009        cmp              r2,#9       ;si ya hay 9 decena
+                                                            s no podemos sumar 
+                                                            mas
+  350 00000314 0A000003        beq              finSuma
+  351 00000318 E2822001        add              r2,r2,#1    ;si r2!=9 -> r2=r2+
+                                                            1
+  352 0000031C E5832000        str              r2,[r3]
+  353 00000320 E2822030        add              r2,r2,#48   ;pasamos las decena
+                                                            s a ascii
+  354 00000324 E5C02000        strb             r2,[r0]
+  355 00000328         
+  356 00000328 E8BD881F 
+                       finSuma POP              {r0-r4,fp,pc}
+  357 0000032C         
+  358 0000032C         
+  359 0000032C         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  360 0000032C         ;      SBR PARA MOVER EL COCHE.
+  361 0000032C         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  362 0000032C E92D4800 
+                       moveCar PUSH             {lr,r11}
+  363 00000330 E1A0B00D        mov              fp,sp
+  364 00000334 E92D000F        PUSH             {r0-r3}
+  365 00000338 E59F0584        LDR              r0,=dir_coche ;r0=@dir_coche
+  366 0000033C E5901000        ldr              r1,[r0]     ;r1=dato de @dir_co
+                                                            che
+  367 00000340         
+  368 00000340         ;Evaluamos el movimiento en el eje X.
+  369 00000340 E59F2590 
+                       moverX  LDR              r2,=dirx    ;r2=@dirx
+  370 00000344 E5923000        ldr              r3,[r2]     ;r3=dato de @dirx
+  371 00000348 E3530000        cmp              r3,#0       ;compruebo si r3=0
+  372 0000034C 0A000006        beq              moverY      ;salto a moverY par
+
+
+
+ARM Macro Assembler    Page 13 
+
+
+                                                            a comprobar si teng
+                                                            o q mover en ese ej
+                                                            e
+  373 00000350 E3730001        cmp              r3,#-1      ;compruebo si r3=-1
+                                                            
+  374 00000354 02411001        subeq            r1,r1,#1    ;si r3==-1, muevo h
+                                                            acia la izda
+  375 00000358 E3530001        cmp              r3,#1       ;compruebo si r3=1
+  376 0000035C 02811001        addeq            r1,r1,#1    ;si r3==1, muevo ha
+                                                            cia la dcha
+  377 00000360 E3A03000        mov              r3,#0       ;r3=dirx=0
+  378 00000364 E5823000        str              r3,[r2]     ;actualizo valor di
+                                                            rx
+  379 00000368 EA000009        b                muevo
+  380 0000036C         
+  381 0000036C         ;Evaluamos el movimiento en el eje Y.
+  382 0000036C E59F2568 
+                       moverY  LDR              r2,=diry    ;r2=@dirx
+  383 00000370 E5923000        ldr              r3,[r2]     ;r3=dato de @dirx
+  384 00000374 E3530000        cmp              r3,#0       ;compruebo si r3=0
+  385 00000378 0A00002D        beq              finMoneda   ;salto a moverY par
+                                                            a comprobar si teng
+                                                            o q mover en ese ej
+                                                            e
+  386 0000037C E3730001        cmp              r3,#-1      ;compruebo si r3=-1
+                                                            
+  387 00000380 02411020        subeq            r1,r1,#32   ;si r3==-1, muevo h
+                                                            acia arriba
+  388 00000384 E3530001        cmp              r3,#1       ;compruebo si r3=1
+  389 00000388 02811020        addeq            r1,r1,#32   ;si r3==1, muevo ha
+                                                            cia abajo
+  390 0000038C E3A03000        mov              r3,#0       ;r3=diry=0
+  391 00000390 E5823000        str              r3,[r2]     ;actualizo valor di
+                                                            ry
+  392 00000394         
+  393 00000394         ;realizo el movimiento del coche
+  394 00000394 E3A02020 
+                       muevo   mov              r2,#' '     ;r2=' '
+  395 00000398 E5903000        ldr              r3,[r0]     ;r3 guarda la @ante
+                                                            rior del coche
+  396 0000039C E5C32000        strb             r2,[r3]     ;limpio la antigua 
+                                                            posición del coche
+  397 000003A0         
+  398 000003A0         ;compruebo derecha y abajo.
+  399 000003A0 E59F24F8        LDR              r2,=0x40007FFF
+  400 000003A4 E1510002        cmp              r1,r2
+  401 000003A8 8A00000A        bhi              quitarVida
+  402 000003AC         ;compruebo izquierda y arriba
+  403 000003AC E59F2508        LDR              r2,=0x40007E20
+  404 000003B0 E1510002        cmp              r1,r2
+  405 000003B4 3A000007        blo              quitarVida
+  406 000003B8         
+  407 000003B8         ;compruebo que la siguiente posición está en blanco
+  408 000003B8 E3A02023        mov              r2,#'#'     ;r2=#
+  409 000003BC E5D13000        ldrb             r3,[r1]     ;guardo en r3     
+  410 000003C0 E1530002        cmp              r3,r2       ;comparo r3 con r2
+  411 000003C4 0A000003        beq              quitarVida  ;si son iguales, sa
+                                                            lto a quitarVida
+  412 000003C8         
+
+
+
+ARM Macro Assembler    Page 14 
+
+
+  413 000003C8 E5801000 
+                       escribo str              r1,[r0]     ;guardo la nueva po
+                                                            sición del coche en
+                                                             la pantalla
+  414 000003CC E3A02048        mov              r2,#'H'     ;r2=H
+  415 000003D0 E5C12000        strb             r2,[r1]     ;escribo 'H' en la 
+                                                            nueva posición del 
+                                                            coche
+  416 000003D4 EA000016        b                finMoneda
+  417 000003D8         
+  418 000003D8         ;PIERDO UNA VIDA
+  419 000003D8 E59F04D8 
+                       quitarVida
+                               LDR              r0,=vidas   ;r0=@vidas
+  420 000003DC E5901000        ldr              r1,[r0]     ;r1=dato de @vidas
+  421 000003E0 E2411001        sub              r1,r1,#1    ;r1=r1-1
+  422 000003E4 E5801000        str              r1,[r0]     ;guardamos el nuevo
+                                                             valor de vidas
+  423 000003E8 E59F24C4        LDR              r2,=dirVidas ;r2=@dirVidas
+  424 000003EC E5922000        ldr              r2,[r2]     ;r2=dato de @dirVid
+                                                            as
+  425 000003F0 E2813030        add              r3,r1,#48   ;r3=vidas+48  [paso
+                                                             a ascii]
+  426 000003F4 E5C23000        strb             r3,[r2]     ;muestro en pantall
+                                                            a el n de vidas
+  427 000003F8 E3510000        cmp              r1,#0       ;comparo vidas con 
+                                                            0
+  428 000003FC 1A000003        bne              nomesalgo   ;si no es cero, sal
+                                                            to a nomesalgo 
+  429 00000400         
+  430 00000400         ;No me quedan mas vidas acaba el juego
+  431 00000400 E59F04C8        LDR              r0,=fin     ;r0=@fin
+  432 00000404 E3A01001        mov              r1,#1       ;r1=1
+  433 00000408 E5C01000        strb             r1,[r0]     ;guardo el 1 en fin
+                                                             (acaba el programa
+                                                            )
+  434 0000040C EA000017        b                finMover
+  435 00000410         
+  436 00000410         ;Pierdo una vida y vuelvo a la posicion inicial, en el c
+                       entro de la ultima fila
+  437 00000410 E59F34AC 
+                       nomesalgo
+                               LDR              r3,=dir_coche ;r3=@dir_coche
+  438 00000414 E59F04A4        LDR              r0,=vecRoad ;r0=@vecRoad
+  439 00000418 E5D0000E        ldrb             r0,[r0,#14] ;r0=@vecRoad+14
+  440 0000041C E2800004        add              r0,r0,#4    ;r0=r0+4
+  441 00000420 E59F14DC        LDR              r1,=0x40007FE0
+  442 00000424 E0811000        add              r1,r1,r0
+  443 00000428 E5831000        str              r1,[r3]
+  444 0000042C E3A02048        mov              r2,#'H'     ;r2=H
+  445 00000430 E5C12000        strb             r2,[r1]     ;guardo H en r1
+  446 00000434         
+  447 00000434         finMoneda                            ;Compruebo si el co
+                                                            che ha cogido una m
+                                                            oneda
+  448 00000434 E59F0488        LDR              r0,=dir_coche
+  449 00000438 E5900000        ldr              r0,[r0]
+  450 0000043C E59F14C4        LDR              r1,=0x1FF   ;bits no comunes a 
+                                                            todas las direccion
+
+
+
+ARM Macro Assembler    Page 15 
+
+
+                                                            es de la pantalla
+  451 00000440 E0002001        and              r2,r0,r1    ;r2=bits que define
+                                                            n la posicion en pa
+                                                            ntalla
+  452 00000444 E1A012A2        mov              r1,r2,LSR#5 ;r1=numero de fila 
+                                                            del coche
+  453 00000448 E2411001        sub              r1,r1,#1    ;r1=ind. fila en ve
+                                                            cCoin
+  454 0000044C E3A0201F        LDR              r2,=0x1F    ;bits no comunes en
+                                                            tre las columnas de
+                                                             una fila
+  455 00000450 E0000002        and              r0,r0,r2    ;r0=numero de colum
+                                                            na del coche
+  456 00000454 E59F24B0        LDR              r2,=vecCoin
+  457 00000458 E7D23001        ldrb             r3,[r2,r1]  ;r3=num. de vecCoin
+                                                             de la fila donde e
+                                                            sta el coche
+  458 0000045C E1530000        cmp              r3,r0       ;compruebo si el co
+                                                            che y la moneda est
+                                                            an en la misma colu
+                                                            mna
+  459 00000460 1A000002        bne              finMover
+  460 00000464 EBFFFF91        bl               sumaMoneda
+  461 00000468 E3A03000        mov              r3,#0
+  462 0000046C E7C23001        strb             r3,[r2,r1]  ;actualizo a 0 la p
+                                                            osicion de la moned
+                                                            a
+  463 00000470         
+  464 00000470 E8BD880F 
+                       finMover
+                               POP              {r0-r3,fp,pc}
+  465 00000474         
+  466 00000474         
+  467 00000474         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  468 00000474         ;      MOVER LA CARRETERA.
+  469 00000474         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  470 00000474 E92D4800 
+                       moverCarretera
+                               PUSH             {lr,r11}
+  471 00000478 E1A0B00D        mov              fp,sp
+  472 0000047C E92D01FF        PUSH             {r0-r8}
+  473 00000480         
+  474 00000480         ;Mover toda la pantalla excepto una fila hacia abajo
+  475 00000480 E59F047C        LDR              r0,=0x40007FE0
+  476 00000484 E59F1434        LDR              r1,=vecRoad
+  477 00000488 E59F747C        LDR              r7,=vecCoin
+  478 0000048C E3A04020        mov              r4,#' '     ;r4=' '
+  479 00000490 E3A05023        mov              r5,#'#'     ;r5=#
+  480 00000494 E3A0606F        mov              r6,#'o'     ;r6=o
+  481 00000498 E3A0200E        mov              r2,#14      ;r2 = última fila
+  482 0000049C         
+  483 0000049C         ;MOVEMOS TODAS LAS FILAS DE LA PANTALLA UNA POSICION
+  484 0000049C         ;Quitamos los caracteres de la fila
+  485 0000049C E7D13002 
+                       bucCar  ldrb             r3,[r1,r2]  ;r3 = posicion lado
+                                                             izquierdo de la ca
+                                                            rretera
+
+
+
+ARM Macro Assembler    Page 16 
+
+
+  486 000004A0 E7C04003        strb             r4,[r0,r3]  ;ponemos un espacio
+                                                             en blanco donde an
+                                                            tes estaba la carre
+                                                            tera
+  487 000004A4 E2833008        add              r3,r3,#8    ;r3 = r3 + 8 (posic
+                                                            ion lado izquierdo 
+                                                            de la carretera)
+  488 000004A8 E7C04003        strb             r4,[r0,r3]  ;ponemos un espacio
+                                                             en blanco donde an
+                                                            tes estaba la carre
+                                                            tera
+  489 000004AC E7D73002        ldrb             r3,[r7,r2]  ;r3=posicion de la 
+                                                            moneda
+  490 000004B0 E3530000        cmp              r3,#0
+  491 000004B4 0A000000        beq              noQuitarCoin ;r3=0 -> no hay mo
+                                                            neda en esa fila
+  492 000004B8 E7C04003        strb             r4,[r0,r3]  ;ponemos un espacio
+                                                             donde estaba la mo
+                                                            neda
+  493 000004BC         
+  494 000004BC         ;Ponemos los nuevos valores, los de la fila superior
+  495 000004BC E1A08002 
+                       noQuitarCoin
+                               mov              r8,r2       ;r8=indice de la fi
+                                                            la actual
+  496 000004C0 E2422001        sub              r2,r2,#1    ;r2=indice de la fi
+                                                            la superior
+  497 000004C4 E7D13002        ldrb             r3,[r1,r2]  ;r3 = pos. fila sup
+                                                            erior # izq.
+  498 000004C8 E7C13008        strb             r3,[r1,r8]  ;guardamos en vecRo
+                                                            ad la posicion del 
+                                                            # superior
+  499 000004CC E7C05003        strb             r5,[r0,r3]  ;ponemos # donde es
+                                                            ta el margen derech
+                                                            o en la fila superi
+                                                            or
+  500 000004D0 E2833008        add              r3,r3,#8
+  501 000004D4 E7C05003        strb             r5,[r0,r3]  ;ponemos # donde es
+                                                            ta el margen izquie
+                                                            rdo en la fila supe
+                                                            rior
+  502 000004D8 E7D73002        ldrb             r3,[r7,r2]  ;r3=posicion de la 
+                                                            moneda de la fila s
+                                                            uperior
+  503 000004DC E7C73008        strb             r3,[r7,r8]  ;guardamos en vecCo
+                                                            in la pos. de la mo
+                                                            neda de la fila sup
+                                                            erior
+  504 000004E0 E3530000        cmp              r3,#0
+  505 000004E4 0A00000B        beq              noMoney     ;r3=0 -> no hay mon
+                                                            eda
+  506 000004E8 E7C06003        strb             r6,[r0,r3]  ;colocamos la moned
+                                                            a en la pantalla
+  507 000004EC         
+  508 000004EC         ;Comprobamos si el coche ha cogido una moneda
+  509 000004EC E0808003        add              r8,r0,r3    ;r8=(pos. 0 de la f
+                                                            ila + pos.moneda en
+                                                             la fila = pos.mone
+                                                            da en la pantalla)
+
+
+
+ARM Macro Assembler    Page 17 
+
+
+  510 000004F0 E59F33CC        LDR              r3,=dir_coche
+  511 000004F4 E5933000        ldr              r3,[r3]     ;r3=direccion del c
+                                                            oche
+  512 000004F8 E1580003        cmp              r8,r3       ;la moneda coincide
+                                                             con el coche
+  513 000004FC 1A000005        bne              noMoney
+  514 00000500 E3A03048        mov              r3,#'H'
+  515 00000504 E5C83000        strb             r3,[r8]     ;volvemos a colocar
+                                                             el coche
+  516 00000508 E3A03000        mov              r3,#0
+  517 0000050C E2828001        add              r8,r2,#1
+  518 00000510 E7C73008        strb             r3,[r7,r8]  ;colocamos un 0 en 
+                                                            vecCoin
+  519 00000514 EBFFFF65        bl               sumaMoneda  ;añadimos un punto
+  520 00000518         
+  521 00000518 E2400020 
+                       noMoney sub              r0,r0,#32   ;r0=0x40007FE0, 0x4
+                                                            0007FC0, 0x40007FA0
+                                                            , ..., 0x40007E20
+  522 0000051C E3520000        cmp              r2,#0
+  523 00000520 1AFFFFDD        bne              bucCar
+  524 00000524         
+  525 00000524         ; Valor aleatorio 1 (Si numRand=0 -> se mueve a la izqui
+                       erda, 
+  526 00000524         ;      numRand=1 -> se queda quieta, 
+  527 00000524         ;      numRand=2 -> se mueve a la drch, 
+  528 00000524         ;      numRand=3 -> coge el bit0 de posCoche, si bit0=0 
+                       -> mueve a la izq, bit0=1 -> mueve  a la drch)
+  529 00000524         
+  530 00000524         ;NÚMEROS ALEATORIOS PARA CREAR LA SIGUIENTE FILA
+  531 00000524 E24DD004        sub              sp,sp,#4    ;espacio para el re
+                                                            sultado
+  532 00000528 EBFFFFFE        bl               rand
+  533 0000052C E49D0004        POP              {r0}        ;r0=numRand1  
+  534 00000530 E3A01003        mov              r1,#3       ;r1=máscara 0..011
+  535 00000534 E0000001        and              r0,r0,r1    ;r0=numRand = 000..
+                                                            .[1,0]bit de numRan
+                                                            d
+  536 00000538         
+  537 00000538 E3500000        cmp              r0,#0       ;si r0=0
+  538 0000053C 0A000008        beq              movIzq      ;se mueve a la izqu
+                                                            ierda
+  539 00000540 E3500001        cmp              r0,#1       ;si r0=2
+  540 00000544 0A00001B        beq              movDer      ;se mueve a la dere
+                                                            cha
+  541 00000548 E59F0374        LDR              r0, =dir_coche
+  542 0000054C E5900000        ldr              r0, [r0]    ;r0=reloj
+  543 00000550 E2000001        and              r0, r0, #1  ;r0=bit0
+  544 00000554 E3500000        cmp              r0,#0       ;si r0=0
+  545 00000558 0A000001        beq              movIzq      ;se mueve a la izqu
+                                                            ierda
+  546 0000055C E3500001        cmp              r0,#1       ;si r0=1
+  547 00000560 0A000014        beq              movDer      ;se mueve a la dere
+                                                            cha
+  548 00000564         
+  549 00000564 E59F0350 
+                       movIzq  LDR              r0,=0x40007E20
+  550 00000568 E59F1350        LDR              r1,=vecRoad
+  551 0000056C E5D13000        ldrb             r3,[r1]     ;r3=vecRoad[0]
+
+
+
+ARM Macro Assembler    Page 18 
+
+
+  552 00000570 E3530000        cmp              r3,#0       ;si vecRoad[0]=0, n
+                                                            o se puede mover a 
+                                                            la izquierda
+  553 00000574 0A000024        beq              ponerMoney
+  554 00000578 E7C04003        strb             r4,[r0,r3]  ;ponemos un espacio
+                                                             en el margen izqui
+                                                            erdo
+  555 0000057C E2837008        add              r7,r3,#8
+  556 00000580 E7C04007        strb             r4,[r0,r7]  ;ponemos un espacio
+                                                             en el margen derec
+                                                            ho
+  557 00000584 E2433001        sub              r3,r3,#1    ;r3 = vecRoad[0]-1
+  558 00000588 E5C13000        strb             r3,[r1]     ;vecRoad[0] = vecRo
+                                                            ad[0]-1
+  559 0000058C E7C05003        strb             r5,[r0,r3]  ;ponemos # en el nu
+                                                            evo margen izquierd
+                                                            o
+  560 00000590 E2837008        add              r7,r3,#8
+  561 00000594 E7C05007        strb             r5,[r0,r7]  ;ponemos # en el nu
+                                                            evo margen derecho
+  562 00000598 E59F136C        LDR              r1,=vecCoin
+  563 0000059C E5D12000        ldrb             r2,[r1]
+  564 000005A0 E3520000        cmp              r2,#0       ;r2=0 no hay moneda
+                                                            
+  565 000005A4 0A000018        beq              ponerMoney
+  566 000005A8 E7C04002        strb             r4,[r0,r2]  ;si hay moneda la q
+                                                            uitamos
+  567 000005AC E3A02000        mov              r2,#0
+  568 000005B0 E5C12000        strb             r2,[r1]     ;actualizamos valor
+                                                             de vecCoin a 0
+  569 000005B4 EA000014        b                ponerMoney
+  570 000005B8         
+  571 000005B8 E59F02FC 
+                       movDer  LDR              r0,=0x40007E20
+  572 000005BC E59F12FC        LDR              r1,=vecRoad
+  573 000005C0 E5D13000        ldrb             r3,[r1]     ;r3=vecRoad[0]
+  574 000005C4 E2837008        add              r7,r3,#8
+  575 000005C8 E357001E        cmp              r7,#30      ;si vecRoad[0]=0, n
+                                                            o se puede mover a 
+                                                            la derecha
+  576 000005CC 8A00000E        bhi              ponerMoney
+  577 000005D0 E7C04003        strb             r4,[r0,r3]  ;ponemos un espacio
+                                                             en el margen izqui
+                                                            erdo
+  578 000005D4 E2837008        add              r7,r3,#8
+  579 000005D8 E7C04007        strb             r4,[r0,r7]  ;ponemos un espacio
+                                                             en el margen derec
+                                                            ho
+  580 000005DC E2833001        add              r3,r3,#1    ;r3=vecRoad[0]-1
+  581 000005E0 E5C13000        strb             r3,[r1]     ;vecRoad[0]=vecRoad
+                                                            [0]-1
+  582 000005E4 E7C05003        strb             r5,[r0,r3]  ;ponemos # en el nu
+                                                            evo margen izquierd
+                                                            o
+  583 000005E8 E2837008        add              r7,r3,#8
+  584 000005EC E7C05007        strb             r5,[r0,r7]  ;ponemos # en el nu
+                                                            evo margen derecho
+  585 000005F0 E59F1314        LDR              r1,=vecCoin
+  586 000005F4 E5D12000        ldrb             r2,[r1]
+
+
+
+ARM Macro Assembler    Page 19 
+
+
+  587 000005F8 E3520000        cmp              r2,#0       ;r2=0 no hay moneda
+                                                            
+  588 000005FC 0A000002        beq              ponerMoney
+  589 00000600 E7C04002        strb             r4,[r0,r2]  ;si hay moneda la q
+                                                            uitamos
+  590 00000604 E3A02000        mov              r2,#0
+  591 00000608 E5C12000        strb             r2,[r1]     ;actualizamos valor
+                                                             de vecCoin a 0
+  592 0000060C         
+  593 0000060C         ;Comprobamos si colocamos moneda
+  594 0000060C E59F02B8 
+                       ponerMoney
+                               LDR              r0,=tmoneda
+  595 00000610 E5901000        ldr              r1,[r0]     ;r1=tmoneda, numero
+                                                             de filas hasta la 
+                                                            siguiente moneda
+  596 00000614 E3510000        cmp              r1,#0
+  597 00000618 E2411001        sub              r1,r1,#1    ;tmoneda--
+  598 0000061C E5801000        str              r1,[r0]
+  599 00000620 8A00001E        bhi              finError    ;tmoneda!=0 -> no p
+                                                            onemos moneda
+  600 00000624         ;Llamamos a la subrutina rand para determinar el siguien
+                       te valor de tmoneda
+  601 00000624 E24DD004        sub              sp,sp,#4
+  602 00000628 EBFFFFFE        bl               rand
+  603 0000062C E49D1004        POP              {r1}        ;r1=num.aleatorio
+  604 00000630 E3A0200F        mov              r2,#15      ;r2=15
+  605 00000634 E0011002        and              r1,r1,r2    ;r1=num aletaorio e
+                                                            ntre 0 y 15
+  606 00000638 E2811001        add              r1,r1,#1    ;r1=num aletaorio e
+                                                            ntre 1 y 16
+  607 0000063C E5801000        str              r1,[r0]     ;tmoneda = [1,...,1
+                                                            6]    
+  608 00000640         ;Colocamos moneda
+  609 00000640 E59F0274        LDR              r0,=0x40007E20
+  610 00000644 E59F1274        LDR              r1,=vecRoad
+  611 00000648 E59F22BC        LDR              r2,=vecCoin
+  612 0000064C         ;Llamamos a la subrutina rand para determinar el valor d
+                       e la columna de la moneda
+  613 0000064C E24DD004        sub              sp,sp,#4
+  614 00000650 EBFFFFFE        bl               rand
+  615 00000654 E49D3004        POP              {r3}        ;r3=num.aleatorio
+  616 00000658 E3A04007        mov              r4,#7       ;r4=7
+  617 0000065C E0033004        and              r3,r3,r4    ;r3=[0,..,7]
+  618 00000660 E3530000        cmp              r3,#0       ;si r3=0 no ponemos
+                                                             moneda
+  619 00000664 0A00000C        beq              noCoin
+  620 00000668 E5D14000        ldrb             r4,[r1]     ;r4=indice # izq
+  621 0000066C E0833004        add              r3,r3,r4    ;r3=ind.#izq + num.
+                                                            aleatorio entre 1 y
+                                                             7, es la pos.moned
+                                                            a en la fila
+  622 00000670 E3A0406F        mov              r4,#'o'
+  623 00000674 E7C04003        strb             r4,[r0,r3]  ;colocamos la moned
+                                                            a
+  624 00000678         ;Comprobamos si la moneda coincide con el coche
+  625 00000678 E0800003        add              r0,r0,r3    ;r0=pos.moneda en l
+                                                            a pantalla
+  626 0000067C E59F1240        LDR              r1,=dir_coche
+
+
+
+ARM Macro Assembler    Page 20 
+
+
+  627 00000680 E5911000        ldr              r1,[r1]     ;r1=pos.coche
+  628 00000684 E1500001        cmp              r0,r1       ;la moneda coincide
+                                                             con el coche
+  629 00000688 1A000003        bne              noCoin
+  630 0000068C E3A01048        mov              r1,#'H'     ;la moneda coincide
+                                                             con el coche
+  631 00000690 EBFFFF06        bl               sumaMoneda  ;añadimos un punto
+  632 00000694 E5C01000        strb             r1,[r0]     ;colocamos el coche
+                                                            
+  633 00000698 E3A03000        mov              r3,#0
+  634 0000069C E5C23000 
+                       noCoin  strb             r3,[r2]     ;actualizamos el va
+                                                            lor de vecCoin
+  635 000006A0         
+  636 000006A0         ;Comprobamos si el coche se ha salido de los limites de 
+                       la carretera
+  637 000006A0 E59F421C 
+                       finError
+                               LDR              r4,=dir_coche
+  638 000006A4 E5941000        ldr              r1,[r4]     ;r1=pos.coche
+  639 000006A8 E5D11000        ldrb             r1,[r1]     ;r1=caracter de la 
+                                                            posicion del coche
+  640 000006AC E1510005        cmp              r1,r5       ;r1=# -> el coche h
+                                                            a chocado
+  641 000006B0 1A000015        bne              finRoad
+  642 000006B4 E59F01FC        LDR              r0,=vidas   ;r0=@vidas
+  643 000006B8 E5901000        ldr              r1,[r0]     ;r1=dato de @vidas
+  644 000006BC E2411001        sub              r1,r1,#1    ;r1=r1-1
+  645 000006C0 E5801000        str              r1,[r0]     ;guardamos el nuevo
+                                                             valor de vidas
+  646 000006C4 E59F21E8        LDR              r2,=dirVidas ;r2=@dirVidas
+  647 000006C8 E5922000        ldr              r2,[r2]     ;r2=dato de @dirVid
+                                                            as
+  648 000006CC E2813030        add              r3,r1,#48   ;r3=vidas+48  [paso
+                                                             a ascii]
+  649 000006D0 E5C23000        strb             r3,[r2]     ;muestro en pantall
+                                                            a el n de vidas
+  650 000006D4 E3510000        cmp              r1,#0
+  651 000006D8 8A000003        bhi              continuo
+  652 000006DC         ;No me quedan mas vidas y acaba el juego 
+  653 000006DC E59F01EC        LDR              r0,=fin
+  654 000006E0 E3A01001        mov              r1,#1
+  655 000006E4 E5C01000        strb             r1,[r0]
+  656 000006E8 EA000007        b                finRoad
+  657 000006EC         ;Me quedan mas vidas y coloco el coche en la pos. inicia
+                       l 
+  658 000006EC E59F01CC 
+                       continuo
+                               LDR              r0,=vecRoad
+  659 000006F0 E5D0000E        ldrb             r0,[r0,#14] ;r0=pos.# izq. en l
+                                                            a ultima fila
+  660 000006F4 E2800004        add              r0,r0,#4    ;r0=pos.centro en u
+                                                            ltima fila 
+  661 000006F8 E59F1204        LDR              r1,=0x40007FE0 ;r1=valor ultima
+                                                             fila
+  662 000006FC E0811000        add              r1,r1,r0    ;r1=pos. centro de 
+                                                            ultima fila en la p
+                                                            antalla
+  663 00000700 E5841000        str              r1,[r4]     ;actualizo la posic
+
+
+
+ARM Macro Assembler    Page 21 
+
+
+                                                            ion del coche
+  664 00000704 E3A02048        mov              r2,#'H'
+  665 00000708 E5C12000        strb             r2,[r1]     ;coloco el coche
+  666 0000070C         
+  667 0000070C E8BD89FF 
+                       finRoad POP              {r0-r8, r11, pc}
+  668 00000710         
+  669 00000710         
+  670 00000710         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  671 00000710         ;      RUTINA DE SERVICIO DEL TIMER
+  672 00000710         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  673 00000710         RSI_reloj                            ;Rutina de servicio
+                                                             a la interrupcion 
+                                                            IRQ4 (timer 0) 
+  674 00000710         ;Cada 0,01 s. llega una peticion de interrupcion 
+  675 00000710         ;Prólogo ---   I=0 ---    Activar IRQS
+  676 00000710 E24EE004        sub              lr,lr,#4    ;correccion @ret. (
+                                                            segmentado)
+  677 00000714 E52DE004        PUSH             {lr}        ;apilar @retorno (p
+                                                            ila modo IRQ)
+  678 00000718 E14FE000        mrs              r14,spsr    ;r14_irq = cpsr pro
+                                                            g. interrumpido
+  679 0000071C E52DE004        PUSH             {r14}       ;apilar estado prog
+                                                            . interr.
+  680 00000720 E321F052        msr              cpsr_c,#2_01010010 ;I=0 -> acti
+                                                            var IRQs (modo IRQ)
+                                                            
+  681 00000724         
+  682 00000724 E92D0007        PUSH             {r0-r2}     ;apilar regs a util
+                                                            izar
+  683 00000728         ;control (bajar pet. IRQ4)
+  684 00000728 E59F01E0        LDR              r0,=T0_IR   ;r0=@T0_IR
+  685 0000072C E3A01001        mov              r1,#1       ;r1=1
+  686 00000730 E5801000        str              r1,[r0]     ;escribir 1 en T0_I
+                                                            R para bajar petici
+                                                            ón HW IRQ[4] 
+  687 00000734         
+  688 00000734         ;aumentar reloj
+  689 00000734 E59F01A4        LDR              r0,=reloj   ;r0=@reloj
+  690 00000738 E5901000        ldr              r1,[r0]     ;r1=reloj
+  691 0000073C E2811001        add              r1,r1,#1    ;r1=reloj++
+  692 00000740 E5801000        str              r1,[r0]     ;@reloj=reloj++
+  693 00000744 E59F017C        LDR              r0,=velo    ;r0=@velo
+  694 00000748 E5901000        ldr              r1,[r0]     ;r1=velo
+  695 0000074C E2811001        add              r1,r1,#1    ;r1=velo++
+  696 00000750 E5801000        str              r1,[r0]     ;@velo=velo++
+  697 00000754         
+  698 00000754 E8BD0007 
+                       fintimer
+                               POP              {r0-r2}     ;desapilar registro
+                                                            s utilizados
+  699 00000758         ;Epílogo --- preparar ret. + EOI + retorno.
+  700 00000758 E321F0D2        msr              cpsr_c,#2_11010010 ;I=1 -> desa
+                                                            ctivar interr. IRQ
+  701 0000075C E49DE004        POP              {r14}       ;r14=cpsr prog. int
+                                                            errumpido
+  702 00000760 E16FF00E        msr              spsr_fsxc,r14 ;spsr = cpsr prog
+
+
+
+ARM Macro Assembler    Page 22 
+
+
+                                                            . interrumpido
+  703 00000764 E59FE1A8        LDR              r14,=VICVectAddr ;EOI r14=@VICV
+                                                            ectAddr
+  704 00000768 E58EE000        str              r14,[r14]   ;EOI escritura en V
+                                                            ICVectAddr
+  705 0000076C E8FD8000        POP              {pc}^       ;ret. a prog inter.
+                                                             + rec. estado
+  706 00000770         
+  707 00000770         
+  708 00000770         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  709 00000770         ;      RUTINA DE SERVICIO DEL TECLADO 
+  710 00000770         ;-------------------------------------------------------
+                       ----------------------------------------------------
+  711 00000770         RSI_teclado                          ;Rutina de servicio
+                                                             a la interrupcion 
+                                                            IRQ7 (teclado) 
+  712 00000770         ;al pulsar cada tecla llega peticion de interrupcion IRQ
+                       7
+  713 00000770 E24EE004        sub              lr,lr,#4    ;correccion @ret. (
+                                                            segmentado)
+  714 00000774 E52DE004        PUSH             {lr}        ;apilar @retorno (e
+                                                            n pila IRQ) 
+  715 00000778 E14FE000        mrs              r14,spsr    ;r14_irq=cpsr prog.
+                                                             interrumpido
+  716 0000077C E52DE004        PUSH             {r14}       ;apilar estado prog
+                                                            . interr. 
+  717 00000780 E321F052        msr              cpsr_c,#2_01010010 ;I=0 -> acti
+                                                            var IRQs (modo IRQ)
+                                                             
+  718 00000784         
+  719 00000784 E92D0007        PUSH             {r0-r2}     ;apilar registros a
+                                                             utilizar
+  720 00000788         
+  721 00000788 E59F1188        LDR              r1,=RDAT    ;r1=@RDAT teclado
+  722 0000078C E5D10000        ldrb             r0,[r1]     ;r0=codigo ASCII te
+                                                            cla 
+  723 00000790         
+  724 00000790         ;Aumentar velocidad carretera
+  725 00000790 E350002B 
+                       mas     cmp              r0,#'+'     ;comparo la tecla p
+                                                            ulsada con '+'
+  726 00000794 1A000006        bne              menos       ;si r0 no es +, sal
+                                                            to a menos
+  727 00000798 E59F1144        LDR              r1,=max     ;r1=@max [velocidad
+                                                             de carretera]
+  728 0000079C E5910000        ldr              r0,[r1]     ;r2=dato de max
+  729 000007A0 E3500001        cmp              r0,#1       ;comparo r0 con 1
+  730 000007A4 9A00002F        bls              fintec      ;si r0<8, salto a f
+                                                            intec
+  731 000007A8 E2400001        sub              r0,r0,#1    ;bajo la tasa de mo
+                                                            vimiento -> mas rap
+                                                            ido
+  732 000007AC E5810000        str              r0,[r1]     ;guardo el nuevo va
+                                                            lor de max
+  733 000007B0 EA00002C        b                fintec      ;salto incondiciona
+                                                            l a fintec
+  734 000007B4         
+  735 000007B4         ;Disminuir velocidad carretera
+
+
+
+ARM Macro Assembler    Page 23 
+
+
+  736 000007B4 E350002D 
+                       menos   cmp              r0,#'-'     ;comparo la tecla p
+                                                            ulsada con '-'
+  737 000007B8 1A000006        bne              mayus       ;si r0 no es -,salt
+                                                            o a mayus
+  738 000007BC E59F1120        LDR              r1,=max     ;r1=@max [velocidad
+                                                             de carretera]
+  739 000007C0 E5910000        ldr              r0,[r1]     ;r2=dato de max
+  740 000007C4 E3500080        cmp              r0,#128     ;comparo r0 con 128
+                                                            
+  741 000007C8 AA000026        bge              fintec      ;si r0>128, salto a
+                                                             fintec
+  742 000007CC E2800001        add              r0,r0,#1    ;aumento la tasa de
+                                                             velocidad -> mas l
+                                                            ento
+  743 000007D0 E5810000        str              r0,[r1]     ;guardo el nuevo va
+                                                            lor de max
+  744 000007D4 EA000023        b                fintec      ;salto incondiciona
+                                                            l a fintec
+  745 000007D8         
+  746 000007D8 E3C00020 
+                       mayus   bic              r0,r0,#2_100000 
+                                                            ;paso a MAYUSCULAS
+  747 000007DC         
+  748 000007DC         ;Iniciar partida
+  749 000007DC E3500053 
+                       S_inicio
+                               cmp              r0,#'S'     ;comparo la tecla p
+                                                            ulsada con 'S'
+  750 000007E0 1A000003        bne              J_izq       ;
+  751 000007E4 E3A00001        mov              r0,#1       ;
+  752 000007E8 E59F10BC        LDR              r1,=pulsado ;r1=@pulsado
+  753 000007EC E5C10000        strb             r0,[r1]     ;actualizo el valor
+                                                             de pulsado
+  754 000007F0 EA00001C        b                fintec      ;salto incondiciona
+                                                            l a fintec
+  755 000007F4         
+  756 000007F4         ;Mover hacia izquierda
+  757 000007F4 E350004A 
+                       J_izq   cmp              r0,#'J'     ;comparo la tecla p
+                                                            ulsada con 'J'
+  758 000007F8 1A000003        bne              L_dcha      ;
+  759 000007FC E3E00000        mov              r0,#-1      ;
+  760 00000800 E59F10D0        LDR              r1,=dirx    ;
+  761 00000804 E5810000        str              r0,[r1]     ;
+  762 00000808 EA000016        b                fintec      ;salto incondiciona
+                                                            l a fintec
+  763 0000080C         
+  764 0000080C         ;Mover hacia derecha
+  765 0000080C E350004C 
+                       L_dcha  cmp              r0,#'L'     ;comparo la tecla p
+                                                            ulsada con 'L'
+  766 00000810 1A000003        bne              I_arriba    ;
+  767 00000814 E3A00001        mov              r0,#1       ;
+  768 00000818 E59F10B8        LDR              r1,=dirx    ;
+  769 0000081C E5810000        str              r0,[r1]     ;
+  770 00000820 EA000010        b                fintec      ;salto incondiciona
+                                                            l a fintec
+  771 00000824         
+
+
+
+ARM Macro Assembler    Page 24 
+
+
+  772 00000824         ;Mover hacia arriba
+  773 00000824 E3500049 
+                       I_arriba
+                               cmp              r0,#'I'     ;comparo la tecla p
+                                                            ulsada con 'I'
+  774 00000828 1A000003        bne              K_abajo     ;
+  775 0000082C E3E00000        mov              r0,#-1      ;
+  776 00000830 E59F10A4        LDR              r1,=diry    ;
+  777 00000834 E5810000        str              r0,[r1]     ;
+  778 00000838 EA00000A        b                fintec      ;salto incondiciona
+                                                            l a fintec
+  779 0000083C         
+  780 0000083C         ;Mover hacia abajo
+  781 0000083C E350004B 
+                       K_abajo cmp              r0,#'K'     ;comparo la tecla p
+                                                            ulsada con 'K'
+  782 00000840 1A000003        bne              Q_fin       ;
+  783 00000844 E3A00001        mov              r0,#1       ;
+  784 00000848 E59F108C        LDR              r1,=diry    ;
+  785 0000084C E5810000        str              r0,[r1]     ;
+  786 00000850 EA000004        b                fintec      ;salto incondiciona
+                                                            l a fintec
+  787 00000854         
+  788 00000854         ;Finalizar partida
+  789 00000854 E3500051 
+                       Q_fin   cmp              r0,#'Q'     ;miro si la tecla p
+                                                            ulsada corresponde 
+                                                            a la letra 'Q'
+  790 00000858 1A000002        bne              fintec      ;si no se ha pulsad
+                                                            o ninguna tecla rel
+                                                            evante (not S,J,L,I
+                                                            ,K,+,-) salta a fin
+                                                            tec
+  791 0000085C E3A00001        mov              r0,#1       ;r0=1
+  792 00000860 E59F1068        ldr              r1,=fin     ;si la tecla apreta
+                                                            da es Q, entonces g
+                                                            uarda @fin en r0
+  793 00000864 E5C10000        strb             r0,[r1]     ;Guardo r1(1) en r0
+                                                            (@fin) [pongo fin a
+                                                             1]
+  794 00000868         
+  795 00000868 E8BD0007 
+                       fintec  POP              {r0-r2}
+  796 0000086C E321F0D2        msr              cpsr_c,#2_11010010
+  797 00000870 E49DE004        POP              {r14}
+  798 00000874 E16FF00E        msr              spsr_fsxc,r14
+  799 00000878 E59FE094        LDR              r14,=VICVectAddr
+  800 0000087C E58EE000        str              r14,[r14]
+  801 00000880 E8FD8000        POP              {pc}^
+  802 00000884         
+  803 00000884                 END
+              FFFFF100 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              FFFFF010 
+              40007E00 
+              40007FFF 
+
+
+
+ARM Macro Assembler    Page 25 
+
+
+              40007EE1 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              40007E20 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              40007EE3 
+              FFFFF014 
+              00000000 
+              00000000 
+              00000000 
+              40007FE0 
+              000001FF 
+              00000000 
+              E0004000 
+              FFFFF030 
+              E0010000 
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\p
+rac5.d -o.\prac5.o -IC:\Keil_v5\ARM\RV31\INC -IC:\Keil_v5\ARM\CMSIS\Include -IC
+:\Keil_v5\ARM\INC\Philips --predefine="__EVAL SETA 1" --predefine="__UVISION_VE
+RSION SETA 526" --list=.\prac5.lst prac5.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+cont 00000034
+
+Symbol: cont
+   Definitions
+      At line 39 in file prac5.s
+   Uses
+      None
+Comment: cont unused
+contador 00000004
+
+Symbol: contador
+   Definitions
+      At line 18 in file prac5.s
+   Uses
+      None
+Comment: contador unused
+datos 00000000
+
+Symbol: datos
+   Definitions
+      At line 8 in file prac5.s
+   Uses
+      None
+Comment: datos unused
+dirPuntos 00000010
+
+Symbol: dirPuntos
+   Definitions
+      At line 29 in file prac5.s
+   Uses
+      At line 325 in file prac5.s
+Comment: dirPuntos used once
+dirVidas 0000000C
+
+Symbol: dirVidas
+   Definitions
+      At line 28 in file prac5.s
+   Uses
+      At line 136 in file prac5.s
+      At line 423 in file prac5.s
+      At line 646 in file prac5.s
+
+dir_coche 00000014
+
+Symbol: dir_coche
+   Definitions
+      At line 31 in file prac5.s
+   Uses
+      At line 173 in file prac5.s
+      At line 365 in file prac5.s
+      At line 437 in file prac5.s
+      At line 448 in file prac5.s
+      At line 510 in file prac5.s
+      At line 541 in file prac5.s
+      At line 626 in file prac5.s
+      At line 637 in file prac5.s
+
+dirx 00000038
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: dirx
+   Definitions
+      At line 40 in file prac5.s
+   Uses
+      At line 232 in file prac5.s
+      At line 369 in file prac5.s
+      At line 760 in file prac5.s
+      At line 768 in file prac5.s
+
+diry 0000003C
+
+Symbol: diry
+   Definitions
+      At line 41 in file prac5.s
+   Uses
+      At line 239 in file prac5.s
+      At line 382 in file prac5.s
+      At line 776 in file prac5.s
+      At line 784 in file prac5.s
+
+fin 00000040
+
+Symbol: fin
+   Definitions
+      At line 42 in file prac5.s
+   Uses
+      At line 211 in file prac5.s
+      At line 431 in file prac5.s
+      At line 653 in file prac5.s
+      At line 792 in file prac5.s
+
+finGanar 00000060
+
+Symbol: finGanar
+   Definitions
+      At line 48 in file prac5.s
+   Uses
+      At line 217 in file prac5.s
+      At line 335 in file prac5.s
+
+frasefin 00000098
+
+Symbol: frasefin
+   Definitions
+      At line 51 in file prac5.s
+   Uses
+      At line 262 in file prac5.s
+Comment: frasefin used once
+fraseganar 000000B1
+
+Symbol: fraseganar
+   Definitions
+      At line 52 in file prac5.s
+   Uses
+      At line 266 in file prac5.s
+Comment: fraseganar used once
+fraseini 0000007C
+
+Symbol: fraseini
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 50 in file prac5.s
+   Uses
+      At line 91 in file prac5.s
+Comment: fraseini used once
+marcador 00000061
+
+Symbol: marcador
+   Definitions
+      At line 49 in file prac5.s
+   Uses
+      At line 124 in file prac5.s
+Comment: marcador used once
+max 00000030
+
+Symbol: max
+   Definitions
+      At line 38 in file prac5.s
+   Uses
+      At line 248 in file prac5.s
+      At line 727 in file prac5.s
+      At line 738 in file prac5.s
+
+pulsado 00000041
+
+Symbol: pulsado
+   Definitions
+      At line 43 in file prac5.s
+   Uses
+      At line 114 in file prac5.s
+      At line 752 in file prac5.s
+
+puntosDec 00000020
+
+Symbol: puntosDec
+   Definitions
+      At line 34 in file prac5.s
+   Uses
+      At line 328 in file prac5.s
+Comment: puntosDec used once
+puntosUni 00000024
+
+Symbol: puntosUni
+   Definitions
+      At line 35 in file prac5.s
+   Uses
+      At line 327 in file prac5.s
+Comment: puntosUni used once
+reloj 0000002C
+
+Symbol: reloj
+   Definitions
+      At line 37 in file prac5.s
+   Uses
+      At line 246 in file prac5.s
+      At line 689 in file prac5.s
+
+tecl_so 00000008
+
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: tecl_so
+   Definitions
+      At line 23 in file prac5.s
+   Uses
+      At line 72 in file prac5.s
+      At line 309 in file prac5.s
+
+timer_so 00000000
+
+Symbol: timer_so
+   Definitions
+      At line 17 in file prac5.s
+   Uses
+      At line 62 in file prac5.s
+      At line 302 in file prac5.s
+
+tmoneda 00000028
+
+Symbol: tmoneda
+   Definitions
+      At line 36 in file prac5.s
+   Uses
+      At line 204 in file prac5.s
+      At line 594 in file prac5.s
+
+vecCoin 00000051
+
+Symbol: vecCoin
+   Definitions
+      At line 46 in file prac5.s
+   Uses
+      At line 456 in file prac5.s
+      At line 477 in file prac5.s
+      At line 562 in file prac5.s
+      At line 585 in file prac5.s
+      At line 611 in file prac5.s
+
+vecRoad 00000042
+
+Symbol: vecRoad
+   Definitions
+      At line 45 in file prac5.s
+   Uses
+      At line 163 in file prac5.s
+      At line 438 in file prac5.s
+      At line 476 in file prac5.s
+      At line 550 in file prac5.s
+      At line 572 in file prac5.s
+      At line 610 in file prac5.s
+      At line 658 in file prac5.s
+
+velo 00000018
+
+Symbol: velo
+   Definitions
+      At line 32 in file prac5.s
+   Uses
+      At line 191 in file prac5.s
+      At line 224 in file prac5.s
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 693 in file prac5.s
+
+vidas 0000001C
+
+Symbol: vidas
+   Definitions
+      At line 33 in file prac5.s
+   Uses
+      At line 138 in file prac5.s
+      At line 419 in file prac5.s
+      At line 642 in file prac5.s
+
+26 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+I_arriba 00000824
+
+Symbol: I_arriba
+   Definitions
+      At line 773 in file prac5.s
+   Uses
+      At line 766 in file prac5.s
+Comment: I_arriba used once
+J_izq 000007F4
+
+Symbol: J_izq
+   Definitions
+      At line 757 in file prac5.s
+   Uses
+      At line 750 in file prac5.s
+Comment: J_izq used once
+K_abajo 0000083C
+
+Symbol: K_abajo
+   Definitions
+      At line 781 in file prac5.s
+   Uses
+      At line 774 in file prac5.s
+Comment: K_abajo used once
+L_dcha 0000080C
+
+Symbol: L_dcha
+   Definitions
+      At line 765 in file prac5.s
+   Uses
+      At line 758 in file prac5.s
+Comment: L_dcha used once
+Q_fin 00000854
+
+Symbol: Q_fin
+   Definitions
+      At line 789 in file prac5.s
+   Uses
+      At line 782 in file prac5.s
+Comment: Q_fin used once
+RSI_reloj 00000710
+
+Symbol: RSI_reloj
+   Definitions
+      At line 673 in file prac5.s
+   Uses
+      At line 67 in file prac5.s
+Comment: RSI_reloj used once
+RSI_teclado 00000770
+
+Symbol: RSI_teclado
+   Definitions
+      At line 711 in file prac5.s
+   Uses
+      At line 77 in file prac5.s
+Comment: RSI_teclado used once
+S_inicio 000007DC
+
+Symbol: S_inicio
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 749 in file prac5.s
+   Uses
+      None
+Comment: S_inicio unused
+bfin 000002AC
+
+Symbol: bfin
+   Definitions
+      At line 314 in file prac5.s
+   Uses
+      At line 314 in file prac5.s
+Comment: bfin used once
+blanco 000000EC
+
+Symbol: blanco
+   Definitions
+      At line 147 in file prac5.s
+   Uses
+      At line 151 in file prac5.s
+Comment: blanco used once
+blancoF 00000264
+
+Symbol: blancoF
+   Definitions
+      At line 286 in file prac5.s
+   Uses
+      At line 275 in file prac5.s
+      At line 281 in file prac5.s
+
+blanquito 00000080
+
+Symbol: blanquito
+   Definitions
+      At line 106 in file prac5.s
+   Uses
+      At line 95 in file prac5.s
+      At line 101 in file prac5.s
+
+bucCar 0000049C
+
+Symbol: bucCar
+   Definitions
+      At line 485 in file prac5.s
+   Uses
+      At line 523 in file prac5.s
+Comment: bucCar used once
+bucCoche 0000014C
+
+Symbol: bucCoche
+   Definitions
+      At line 178 in file prac5.s
+   Uses
+      At line 184 in file prac5.s
+Comment: bucCoche used once
+bucMarcador 000000B4
+
+Symbol: bucMarcador
+   Definitions
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 129 in file prac5.s
+   Uses
+      At line 133 in file prac5.s
+Comment: bucMarcador used once
+bucRoad 00000108
+
+Symbol: bucRoad
+   Definitions
+      At line 156 in file prac5.s
+   Uses
+      At line 160 in file prac5.s
+Comment: bucRoad used once
+bucVec 00000128
+
+Symbol: bucVec
+   Definitions
+      At line 166 in file prac5.s
+   Uses
+      At line 169 in file prac5.s
+Comment: bucVec used once
+bucle 00000198
+
+Symbol: bucle
+   Definitions
+      At line 210 in file prac5.s
+   Uses
+      At line 251 in file prac5.s
+      At line 255 in file prac5.s
+
+carretera 00000100
+
+Symbol: carretera
+   Definitions
+      At line 154 in file prac5.s
+   Uses
+      At line 148 in file prac5.s
+Comment: carretera used once
+cartelfin 00000244
+
+Symbol: cartelfin
+   Definitions
+      At line 277 in file prac5.s
+   Uses
+      At line 284 in file prac5.s
+Comment: cartelfin used once
+cartelito 00000060
+
+Symbol: cartelito
+   Definitions
+      At line 97 in file prac5.s
+   Uses
+      At line 104 in file prac5.s
+Comment: cartelito used once
+coche 00000138
+
+Symbol: coche
+   Definitions
+      At line 172 in file prac5.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+      None
+Comment: coche unused
+codigo 00000000
+
+Symbol: codigo
+   Definitions
+      At line 55 in file prac5.s
+   Uses
+      None
+Comment: codigo unused
+comprDirX 000001D0
+
+Symbol: comprDirX
+   Definitions
+      At line 232 in file prac5.s
+   Uses
+      None
+Comment: comprDirX unused
+comprDirY 000001E4
+
+Symbol: comprDirY
+   Definitions
+      At line 239 in file prac5.s
+   Uses
+      At line 235 in file prac5.s
+Comment: comprDirY used once
+comprobarF 0000023C
+
+Symbol: comprobarF
+   Definitions
+      At line 274 in file prac5.s
+   Uses
+      At line 291 in file prac5.s
+Comment: comprobarF used once
+compruebo 00000058
+
+Symbol: compruebo
+   Definitions
+      At line 94 in file prac5.s
+   Uses
+      At line 111 in file prac5.s
+Comment: compruebo used once
+continuo 000006EC
+
+Symbol: continuo
+   Definitions
+      At line 658 in file prac5.s
+   Uses
+      At line 651 in file prac5.s
+Comment: continuo used once
+escribirFinal 0000022C
+
+Symbol: escribirFinal
+   Definitions
+      At line 269 in file prac5.s
+   Uses
+      At line 263 in file prac5.s
+Comment: escribirFinal used once
+escribo 000003C8
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Relocatable symbols
+
+
+Symbol: escribo
+   Definitions
+      At line 413 in file prac5.s
+   Uses
+      None
+Comment: escribo unused
+finBucle 00000278
+
+Symbol: finBucle
+   Definitions
+      At line 295 in file prac5.s
+   Uses
+      None
+Comment: finBucle unused
+finError 000006A0
+
+Symbol: finError
+   Definitions
+      At line 637 in file prac5.s
+   Uses
+      At line 599 in file prac5.s
+Comment: finError used once
+finMoneda 00000434
+
+Symbol: finMoneda
+   Definitions
+      At line 447 in file prac5.s
+   Uses
+      At line 385 in file prac5.s
+      At line 416 in file prac5.s
+
+finMover 00000470
+
+Symbol: finMover
+   Definitions
+      At line 464 in file prac5.s
+   Uses
+      At line 434 in file prac5.s
+      At line 459 in file prac5.s
+
+finRoad 0000070C
+
+Symbol: finRoad
+   Definitions
+      At line 667 in file prac5.s
+   Uses
+      At line 641 in file prac5.s
+      At line 656 in file prac5.s
+
+finSuma 00000328
+
+Symbol: finSuma
+   Definitions
+      At line 356 in file prac5.s
+   Uses
+      At line 338 in file prac5.s
+      At line 347 in file prac5.s
+      At line 350 in file prac5.s
+
+
+
+ARM Macro Assembler    Page 6 Alphabetic symbol ordering
+Relocatable symbols
+
+
+fin_pantfin 00000270
+
+Symbol: fin_pantfin
+   Definitions
+      At line 290 in file prac5.s
+   Uses
+      None
+Comment: fin_pantfin unused
+fin_pantinicio 0000008C
+
+Symbol: fin_pantinicio
+   Definitions
+      At line 110 in file prac5.s
+   Uses
+      None
+Comment: fin_pantinicio unused
+fintec 00000868
+
+Symbol: fintec
+   Definitions
+      At line 795 in file prac5.s
+   Uses
+      At line 730 in file prac5.s
+      At line 733 in file prac5.s
+      At line 741 in file prac5.s
+      At line 744 in file prac5.s
+      At line 754 in file prac5.s
+      At line 762 in file prac5.s
+      At line 770 in file prac5.s
+      At line 778 in file prac5.s
+      At line 786 in file prac5.s
+      At line 790 in file prac5.s
+
+fintimer 00000754
+
+Symbol: fintimer
+   Definitions
+      At line 698 in file prac5.s
+   Uses
+      None
+Comment: fintimer unused
+inicio 00000000
+
+Symbol: inicio
+   Definitions
+      At line 59 in file prac5.s
+   Uses
+      At line 56 in file prac5.s
+Comment: inicio used once
+mas 00000790
+
+Symbol: mas
+   Definitions
+      At line 725 in file prac5.s
+   Uses
+      None
+Comment: mas unused
+mayus 000007D8
+
+
+
+ARM Macro Assembler    Page 7 Alphabetic symbol ordering
+Relocatable symbols
+
+
+Symbol: mayus
+   Definitions
+      At line 746 in file prac5.s
+   Uses
+      At line 737 in file prac5.s
+Comment: mayus used once
+menos 000007B4
+
+Symbol: menos
+   Definitions
+      At line 736 in file prac5.s
+   Uses
+      At line 726 in file prac5.s
+Comment: menos used once
+movDer 000005B8
+
+Symbol: movDer
+   Definitions
+      At line 571 in file prac5.s
+   Uses
+      At line 540 in file prac5.s
+      At line 547 in file prac5.s
+
+movIzq 00000564
+
+Symbol: movIzq
+   Definitions
+      At line 549 in file prac5.s
+   Uses
+      At line 538 in file prac5.s
+      At line 545 in file prac5.s
+
+moveCar 0000032C
+
+Symbol: moveCar
+   Definitions
+      At line 362 in file prac5.s
+   Uses
+      At line 236 in file prac5.s
+      At line 243 in file prac5.s
+
+moveRoad 000001F8
+
+Symbol: moveRoad
+   Definitions
+      At line 246 in file prac5.s
+   Uses
+      At line 227 in file prac5.s
+      At line 242 in file prac5.s
+
+moverCarretera 00000474
+
+Symbol: moverCarretera
+   Definitions
+      At line 470 in file prac5.s
+   Uses
+      At line 254 in file prac5.s
+Comment: moverCarretera used once
+
+
+
+ARM Macro Assembler    Page 8 Alphabetic symbol ordering
+Relocatable symbols
+
+moverX 00000340
+
+Symbol: moverX
+   Definitions
+      At line 369 in file prac5.s
+   Uses
+      None
+Comment: moverX unused
+moverY 0000036C
+
+Symbol: moverY
+   Definitions
+      At line 382 in file prac5.s
+   Uses
+      At line 372 in file prac5.s
+Comment: moverY used once
+muevo 00000394
+
+Symbol: muevo
+   Definitions
+      At line 394 in file prac5.s
+   Uses
+      At line 379 in file prac5.s
+Comment: muevo used once
+nVidas 000000C8
+
+Symbol: nVidas
+   Definitions
+      At line 136 in file prac5.s
+   Uses
+      None
+Comment: nVidas unused
+noCoin 0000069C
+
+Symbol: noCoin
+   Definitions
+      At line 634 in file prac5.s
+   Uses
+      At line 619 in file prac5.s
+      At line 629 in file prac5.s
+
+noMoney 00000518
+
+Symbol: noMoney
+   Definitions
+      At line 521 in file prac5.s
+   Uses
+      At line 505 in file prac5.s
+      At line 513 in file prac5.s
+
+noQuitarCoin 000004BC
+
+Symbol: noQuitarCoin
+   Definitions
+      At line 495 in file prac5.s
+   Uses
+      At line 491 in file prac5.s
+Comment: noQuitarCoin used once
+nomesalgo 00000410
+
+
+
+ARM Macro Assembler    Page 9 Alphabetic symbol ordering
+Relocatable symbols
+
+
+Symbol: nomesalgo
+   Definitions
+      At line 437 in file prac5.s
+   Uses
+      At line 428 in file prac5.s
+Comment: nomesalgo used once
+pantallainicial 000000A4
+
+Symbol: pantallainicial
+   Definitions
+      At line 123 in file prac5.s
+   Uses
+      None
+Comment: pantallainicial unused
+ponerMoney 0000060C
+
+Symbol: ponerMoney
+   Definitions
+      At line 594 in file prac5.s
+   Uses
+      At line 553 in file prac5.s
+      At line 565 in file prac5.s
+      At line 569 in file prac5.s
+      At line 576 in file prac5.s
+      At line 588 in file prac5.s
+
+quitarVida 000003D8
+
+Symbol: quitarVida
+   Definitions
+      At line 419 in file prac5.s
+   Uses
+      At line 401 in file prac5.s
+      At line 405 in file prac5.s
+      At line 411 in file prac5.s
+
+rotuloFin 00000220
+
+Symbol: rotuloFin
+   Definitions
+      At line 262 in file prac5.s
+   Uses
+      At line 214 in file prac5.s
+Comment: rotuloFin used once
+rotuloGanar 00000228
+
+Symbol: rotuloGanar
+   Definitions
+      At line 266 in file prac5.s
+   Uses
+      At line 220 in file prac5.s
+Comment: rotuloGanar used once
+seguimos 00000158
+
+Symbol: seguimos
+   Definitions
+      At line 182 in file prac5.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 10 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 179 in file prac5.s
+Comment: seguimos used once
+seguira 000002F0
+
+Symbol: seguira
+   Definitions
+      At line 341 in file prac5.s
+   Uses
+      At line 333 in file prac5.s
+Comment: seguira used once
+sumaMoneda 000002B0
+
+Symbol: sumaMoneda
+   Definitions
+      At line 321 in file prac5.s
+   Uses
+      At line 460 in file prac5.s
+      At line 519 in file prac5.s
+      At line 631 in file prac5.s
+
+tecla 00000094
+
+Symbol: tecla
+   Definitions
+      At line 114 in file prac5.s
+   Uses
+      At line 117 in file prac5.s
+Comment: tecla used once
+66 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+IOCLR E002800C
+
+Symbol: IOCLR
+   Definitions
+      At line 22 in file prac5.s
+   Uses
+      None
+Comment: IOCLR unused
+IOSET E0028004
+
+Symbol: IOSET
+   Definitions
+      At line 21 in file prac5.s
+   Uses
+      None
+Comment: IOSET unused
+MAX_TICS 0000000A
+
+Symbol: MAX_TICS
+   Definitions
+      At line 16 in file prac5.s
+   Uses
+      None
+Comment: MAX_TICS unused
+RDAT E0010000
+
+Symbol: RDAT
+   Definitions
+      At line 20 in file prac5.s
+   Uses
+      At line 721 in file prac5.s
+Comment: RDAT used once
+T0_IR E0004000
+
+Symbol: T0_IR
+   Definitions
+      At line 15 in file prac5.s
+   Uses
+      At line 684 in file prac5.s
+Comment: T0_IR used once
+VICIntEnClr FFFFF014
+
+Symbol: VICIntEnClr
+   Definitions
+      At line 11 in file prac5.s
+   Uses
+      At line 296 in file prac5.s
+Comment: VICIntEnClr used once
+VICIntEnable FFFFF010
+
+Symbol: VICIntEnable
+   Definitions
+      At line 10 in file prac5.s
+   Uses
+      At line 81 in file prac5.s
+Comment: VICIntEnable used once
+VICVectAddr FFFFF030
+
+Symbol: VICVectAddr
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+   Definitions
+      At line 13 in file prac5.s
+   Uses
+      At line 703 in file prac5.s
+      At line 799 in file prac5.s
+
+VICVectAddr0 FFFFF100
+
+Symbol: VICVectAddr0
+   Definitions
+      At line 12 in file prac5.s
+   Uses
+      At line 61 in file prac5.s
+      At line 71 in file prac5.s
+      At line 301 in file prac5.s
+      At line 308 in file prac5.s
+
+dirFin 40007FFF
+
+Symbol: dirFin
+   Definitions
+      At line 26 in file prac5.s
+   Uses
+      At line 145 in file prac5.s
+      At line 176 in file prac5.s
+
+dirInicio 40007E20
+
+Symbol: dirInicio
+   Definitions
+      At line 25 in file prac5.s
+   Uses
+      At line 144 in file prac5.s
+      At line 154 in file prac5.s
+      At line 175 in file prac5.s
+
+dirRotulo 40007EE3
+
+Symbol: dirRotulo
+   Definitions
+      At line 27 in file prac5.s
+   Uses
+      At line 271 in file prac5.s
+Comment: dirRotulo used once
+12 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+rand 00000000
+
+Symbol: rand
+   Definitions
+      At line 58 in file prac5.s
+   Uses
+      At line 199 in file prac5.s
+      At line 532 in file prac5.s
+      At line 602 in file prac5.s
+      At line 614 in file prac5.s
+
+srand 00000000
+
+Symbol: srand
+   Definitions
+      At line 57 in file prac5.s
+   Uses
+      At line 194 in file prac5.s
+Comment: srand used once
+2 symbols
+440 symbols in table
